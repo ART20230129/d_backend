@@ -1,0 +1,35 @@
+dist
+doc
+.idea
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+
+# Optional eslint cache
+.eslintcache
+
+
+# dotenv environment variables file
+.env
+.env.test
+
+# Python cache
+__pycache__/
+
+# Specific backend files
+static/
+media/
+venv/
+.venv/
+
+.vscode/*
+
+
