@@ -1,7 +1,6 @@
 import os
 import mimetypes
 import logging
-import math
 from django.utils.encoding import escape_uri_path
 from django.utils.crypto import get_random_string
 from django.utils import timezone
@@ -24,7 +23,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.authentication import TokenAuthentication
 from django.core.files.storage import FileSystemStorage
 from my_server.models import FileUser
-from my_server.permissions import IsOwner
+from my_server.permissions import IsOwnerOrIsStaff
 from my_server.serialisers import UserSerializer, UserLoginSerializer, UserListSerializer, FileSerializer, \
     FileListSerializer, UserListUpdateSerializer
 
@@ -44,8 +43,7 @@ class RegisterView(APIView):
                 logger.info("The user is registered (Пользователь зарегистрирован)")
                 return Response(json, status=status.HTTP_201_CREATED)
         logger.error("User registration error (Ошибка регистрации пользователя)")
-        return Response({'error': 'Not registered'}, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 '''
 - Используется UserSerializer, который должен включать поля для имени пользователя, 
 пароля и других необходимых данных. Важно, чтобы в сериализаторе была реализована 
@@ -67,7 +65,6 @@ def login_page(request):
             if user is not None:
                 user = authenticate(username=serializer.initial_data['username'],
                                     password=serializer.initial_data['password'])
-                login(request, user)
                 token, _ = Token.objects.get_or_create(user=user)
                 logger.info("Authorization was successful (Авторизация прошла успешно)")
                 return Response({'message': 'Login successful', 'user_id': user.id, 'token': token.key,
@@ -105,7 +102,7 @@ class UserUpdateViewSet(ModelViewSet):
     queryset = User.objects.all().exclude(is_superuser=True).order_by('id')
     serializer_class = UserListUpdateSerializer
     permission_classes = [IsAuthenticated,IsAdminUser]
-    count_user_files = User.objects.annotate(count_files=Count('files'))
+
 
 class UserViewSet(APIView):
     serializer_class = UserListSerializer
@@ -182,7 +179,7 @@ class FileUpload(APIView):
 class FileView(APIView):
     queryset = FileUser.objects.all()
     serializer_class = FileSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwnerOrIsStaff]
 
     '''функция поиска конкретного файла для удаления/переименования и других действий с ним'''
     def get_object(self,id_file):
@@ -214,8 +211,8 @@ class FileView(APIView):
             serializer = FileSerializer(file_rename, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                logger.info('The file has been renamed (Файл был переименован)')
-                return Response({'status': 'OK. The file has been renamed'}, status=status.HTTP_200_OK)
+                logger.info('The file has been renamed (Файл был переименован/изменен комментарий)')
+                return Response({'status': 'OK. The file has been renamed/modified'}, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(str(e))
             return Response({'message': str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -244,7 +241,6 @@ class AdminFilesManagement(APIView):
 
             '''Генерируем уникальный токен'''
             unique_token = get_random_string(length=32)
-            print('unique_token', unique_token)
 
             new_file = FileUser(
                 user = owner,
@@ -281,7 +277,7 @@ def download_file(request, id_file):
         logger.info('The file has not been downloaded')
         raise Http404("File not found")
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def download_file_link(request, id_file):
     try:
@@ -314,6 +310,6 @@ def download_file_from_link(request):
         logger.error('File not found')
         return Response({'status': 'File not found'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class FileListViewSet(ModelViewSet):
-    queryset = FileUser.objects.all()
-    serializer_class = FileListSerializer
+# class FileListViewSet(ModelViewSet):
+#     queryset = FileUser.objects.all()
+#     serializer_class = FileListSerializer

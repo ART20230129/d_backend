@@ -1,3 +1,4 @@
+import re
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
@@ -11,11 +12,29 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'password', 'email', 'last_name']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def validate_username(self, value):
+        if not re.match(r'^[a-zA-Z][a-zA-Z0-9]{3,19}$', value):
+            raise serializers.ValidationError(
+                'Логин должен быть от 4 до 20 символов, начинаться с буквы, содержать только латиницу и цифры')
+        return value
+
+    def validate_password(self, value):
+        if not re.match(r'^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{6,}$', value):
+            raise serializers.ValidationError(
+                'Пароль должен содержать минимум 6 символов, одну заглавную букву, одну цифру и один спец. символ.'
+            )
+        return value
+
+    def validate_email(self, value):
+        if not re.match(r'^(.+)@(.+)\.(.+)$', value):
+            raise serializers.ValidationError(
+                'Неверный формат email.'
+            )
+        return value
+
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password']) # хешируем пароль
         return User.objects.create(**validated_data)
-
-
 
 '''Обратите внимание на использование make_password 
 для хеширования пароля при создании нового пользователя.'''
