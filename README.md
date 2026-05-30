@@ -288,6 +288,7 @@
     DB_PASSWORD=<ПАРОЛЬ_ПОЛЬЗОВАТЕЛЯ>
     DB_HOST=localhost
     DB_PORT=5432
+    CORS_ALLOWED_ORIGINS=http://<ip_сервера_фронтенда>
     ```
     Внимание! Файл .env должен быть на одном уровне с файлом manage.py
 21. Проверить, подключно ли виртуальное окружение и провести миграции
@@ -341,7 +342,7 @@
     Group=www-data
     WorkingDirectory=/home/<ИМЯ_ПОЛЬЗОВАТЕЛЯ>/d_backend
     ExecStart=/home/<ИМЯ_ПОЛЬЗОВАТЕЛЯ>/d_backend/env/bin/gunicorn --access-logfile - --workers=3 \
-                                 --bind unix:/home/stu<ИМЯ_ПОЛЬЗОВАТЕЛЯ>dent/d_backend/backend/project.sock \
+                                 --bind unix:/home/<ИМЯ_ПОЛЬЗОВАТЕЛЯ>/d_backend/backend/project.sock \
                                  backend.wsgi:application
 
     [Install]
@@ -359,7 +360,7 @@
     sudo systemctl start gunicorn
     ```
     ```bash
-    sudo systemctl status gunicorn
+    sudo systemctl enable gunicorn
     ```
 30. Проверяем работоспособность gunicorn
     ```bash
@@ -375,7 +376,7 @@
     server{
 
     listen 80;
-    server_name 195.208.119.35;
+    server_name <ip_сервера_бэкенда>;
 
     location /static/ {
       root /home/<ИМЯ_ПОЛЬЗОВАТЕЛЯ>/d_backend;
@@ -404,7 +405,7 @@
     sudo systemctl status nginx
     ```
     В терминале должна появиться запись зеленым цветом Active: active (running).
-36. С помощью файрвола разрешаем полные права ngins для подключений
+36. С помощью файрвола разрешаем полные права nginx для подключений
     ```bash
     sudo ufw allow 'Nginx Full'
     ```
