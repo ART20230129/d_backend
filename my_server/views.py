@@ -257,7 +257,7 @@ class AdminFilesManagement(APIView):
             logger.error(str(e))
             return Response({'message': str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def download_file(request, id_file):
     try:
